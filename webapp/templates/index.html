@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="initial-scale=1, width=device-width">
+        <title>Budget Categories</title>
+    </head>
+    <body>
+        <h4>Budget your spending across general categories.</h4>
+        <form action="/categories-submitted" method="post">
+        <table>
+           <tr>
+               <th>Category</th>
+               <th>Value</th>
+           </tr>
+            <tr>
+                <td>Food</td>
+                <td><input name="food_val" placeholder="Add value" type="number" min="0" step="0.01" oninput="validity.valid || (value='');"></td>
+            </tr>
+            <tr>
+                <td><input name="newcat1" placeholder="Add category" type="text"></td>
+                <td><input name="newcat1_val" placeholder="Add value" type="number" min="0" step="0.01" oninput="validity.valid || (value='');"></td>
+            </tr>
+        </table>
+        <br>
+        <input type="submit" value="Next">
+        </form>
+    </body>
+
+
+</html>
