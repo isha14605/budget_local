@@ -1,0 +1,424 @@
+{
+    "description": "Customer_Flow",
+    "states": [
+      {
+        "name": "Trigger",
+        "type": "trigger",
+        "transitions": [
+          {
+            "next": "Welcome",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "incomingCall"
+          },
+          {
+            "event": "incomingRequest"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 0,
+            "y": -170
+          }
+        }
+      },
+      {
+        "name": "Welcome",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "split_welcome",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "timeout"
+          },
+          {
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 70,
+            "y": 120
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "Hello, welcome to BudgetLocal! Would you like to (1) learn more, (2) sign up today to save money just for budgeting effectively, or (3) receive a login link for your existing account? Please type the number of your choosing.",
+          "timeout": "3600"
+        }
+      },
+      {
+        "name": "split_welcome",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "error_message_welcome",
+            "event": "noMatch"
+          },
+          {
+            "next": "more_info",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "If value contains 1",
+                "arguments": [
+                  "{{widgets.Welcome.inbound.Body}}"
+                ],
+                "type": "contains",
+                "value": "1"
+              }
+            ]
+          },
+          {
+            "next": "zipcode",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "If value contains 2",
+                "arguments": [
+                  "{{widgets.Welcome.inbound.Body}}"
+                ],
+                "type": "contains",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "next": "login_request",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "If value contains 3",
+                "arguments": [
+                  "{{widgets.Welcome.inbound.Body}}"
+                ],
+                "type": "contains",
+                "value": "3"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{widgets.Welcome.inbound.Body}}",
+          "offset": {
+            "x": 70,
+            "y": 440
+          }
+        }
+      },
+      {
+        "name": "zipcode",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "zipcode_split",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "timeout"
+          },
+          {
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 300,
+            "y": 700
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "Please type your zip code. This is so that you can track your points at businesses in YOUR local community.",
+          "timeout": "3600"
+        }
+      },
+      {
+        "name": "error_message_welcome",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "Welcome",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": -640,
+            "y": 350
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "Sorry, you picked a response that we don't understand."
+        }
+      },
+      {
+        "name": "zipcode_split",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "error_message_zipcode",
+            "event": "noMatch"
+          },
+          {
+            "next": "profile_type",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "If value regex (\\d{5})",
+                "arguments": [
+                  "{{widgets.zipcode.inbound.Body}}"
+                ],
+                "type": "regex",
+                "value": "(\\d{5})"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{widgets.zipcode.inbound.Body}}",
+          "offset": {
+            "x": 190,
+            "y": 990
+          }
+        }
+      },
+      {
+        "name": "profile_type",
+        "type": "send-and-wait-for-reply",
+        "transitions": [
+          {
+            "next": "profile_type_split",
+            "event": "incomingMessage"
+          },
+          {
+            "event": "timeout"
+          },
+          {
+            "event": "deliveryFailure"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 370,
+            "y": 1250
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "body": "Please select the number that best applies to who you are. (1) College student (2) Working professional (3) Parent/guardian (4) Senior (5) None of the above",
+          "timeout": "3600"
+        }
+      },
+      {
+        "name": "profile_type_split",
+        "type": "split-based-on",
+        "transitions": [
+          {
+            "next": "error_message_profile_type",
+            "event": "noMatch"
+          },
+          {
+            "next": "account_done",
+            "event": "match",
+            "conditions": [
+              {
+                "friendly_name": "If value less_than 5",
+                "arguments": [
+                  "{{widgets.profile_type.inbound.Body}}"
+                ],
+                "type": "regex",
+                "value": "^([1-5])$"
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "input": "{{widgets.profile_type.inbound.Body}}",
+          "offset": {
+            "x": 300,
+            "y": 1470
+          }
+        }
+      },
+      {
+        "name": "account_done",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "account_link",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 220,
+            "y": 1730
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "Here is a link to your account. This account is connected to your phone number. Do not share this account link with others as it provides access to your personal budgeting information. If you ever want to log-in in the future and do not have the link, text this number from your current phone number."
+        }
+      },
+      {
+        "name": "account_link",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "share",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 220,
+            "y": 1910
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "insert link here"
+        }
+      },
+      {
+        "name": "share",
+        "type": "send-message",
+        "transitions": [
+          {
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 197,
+            "y": 2141
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "Share us with others in your community! Tell your friends to text us at 1 949 393 7809 ."
+        }
+      },
+      {
+        "name": "more_info",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "Welcome",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 660,
+            "y": 360
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "We are a budgeting app that gives you points to save money at local businesses based on your success with sticking to your budget!"
+        }
+      },
+      {
+        "name": "error_message_zipcode",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "zipcode",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": -250,
+            "y": 1000
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "Sorry, you picked a zipcode that we don't understand."
+        }
+      },
+      {
+        "name": "error_message_profile_type",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "profile_type",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": -310,
+            "y": 1440
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "Sorry, you picked a profile type that we don't understand."
+        }
+      },
+      {
+        "name": "login_request",
+        "type": "send-message",
+        "transitions": [
+          {
+            "next": "Welcome",
+            "event": "sent"
+          },
+          {
+            "event": "failed"
+          }
+        ],
+        "properties": {
+          "offset": {
+            "x": 790,
+            "y": 640
+          },
+          "service": "{{trigger.message.InstanceSid}}",
+          "channel": "{{trigger.message.ChannelSid}}",
+          "from": "{{flow.channel.address}}",
+          "to": "{{contact.channel.address}}",
+          "body": "Sorry, this feature is not available yet."
+        }
+      }
+    ],
+    "initial_state": "Trigger",
+    "flags": {
+      "allow_concurrent_calls": true
+    }
+  }
